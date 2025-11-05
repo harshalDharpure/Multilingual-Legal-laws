@@ -1,0 +1,17 @@
+# VERA Project Configuration File
+# Copy this to config.yaml and update paths as needed
+
+# ARR Prompt Template File
+arr_prompt: "ARR_prompting.txt"
+
+# Data Files
+actual_data: "test_data.json"  # Can be .json or .jsonl format
+rag_retrieved_context: "rag_retrieved_questions.jsonl"
+
+# Model Settings
+save_file_main_model: "qwen7b"
+
+# Optional: Additional paths
+# train_data: "train_data.jsonl"
+# test_data: "test_data.json"
+

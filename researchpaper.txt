@@ -1,0 +1,1745 @@
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 1
+1 2
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 2
+VERA: A Structured and Verified Reasoning
+Pipeline for Sensitive Legal Question Answering
+Vaneet Kour, Shiva Gupta, Harsh Jha, Sudhir Kumar, Rajiv Misra Senior Member, IEEE, T.N.Singh
+Senior Member, IEEE
+Abstract—Legal question answering (QA) has seen significant progress with the advent of transformer-based models
+and structured reasoning strategies. However, most existing
+approaches focus on general legal domains, lack explainable
+justifications, and fall short in handling regulation-specific and
+sensitive contexts such as child sexual abuse (CSA) law in
+India where both interpretability and statutory fidelity are
+paramount. This paper presents VERA, a verified, multistage legal reasoning framework developed to enhance both
+answer accuracy and explanation quality in such high-stakes
+legal domains. VERA integrates three synergistic components:
+retrieval-augmented structured prompting (ARR), critique–
+debate–adjudication (CDA), and a chain-of-verification (CoV)
+protocol. These stages are unified via a novel Verified ARRenhanced Response Aggregation (VERA) module, which fuses
+factually validated reasoning with interpretive legal explanations to improve epistemic reliability and user trust. Empirical
+evaluation on our newly introduced Child Abuse Legal Support
+Dataset (CALSD), comprising 10,000 MCQ-style legal QA
+instances derived from Indian CSA case law, demonstrates
+the effectiveness of VERA, achieving 93.8% QA accuracy and
+an NLI consistency score of 0.7984. Ablation studies confirm
+the contribution of VERA module. Human expert evaluation
+of case studies further affirms the system’s interpretability,
+fairness, and practical potential for integration into legal aid
+and judicial workflows.
+Index Terms—ARR, Chain-of-Verification, Child Sexual
+Abuse, Explainable AI, Legal Question Answering, Legal NLP,
+Retrieval-Augmented Generation.
+I. Introduction
+C
+HILD sexual abuse (CSA) remains a critical and
+under-addressed issue in India, requiring not only
+legal reform but also technological support to ensure
+timely justice. According to the National Crime Records
+Bureau (NCRB) 2022 report [1], over 55,000 cases were
+registered under the Protection of Children from Sexual
+Offences (POCSO) Act—marking a 12.3% increase from
+the previous year.
+While India has enacted robust legal frameworks such
+as the POCSO Act [2] and the Juvenile Justice Act [3],
+the practical complexity of statutory language, fragmented
+judicial interpretations, and systemic barriers make it
+Vaneet Kour, Shiva Gupta, Harsh Jha, Sudhir Kumar, Rajiv Misra
+and T.N. Singh are with the Department of Computer Science
+and Engineering, Indian Institute of Technology, Patna, India
+(Email: vaneet_2221cs15@iitp.ac.in, shiva_2311cs37@iitp.ac.in,
+harsh_2311ai14@iitp.ac.in, sudhir_2221cs14@iitp.ac.in ,
+rajivm@iitp.ac.in and tns@iitp.ac.in).
+Manuscript received April 19, 2021; revised August 16, 2021.
+difficult for non-experts to access legal remedies. Although
+recent advances in NLP have enabled progress in legal
+document retrieval and judgment prediction [4], [5], these
+systems are primarily trained on Western corpora and
+general legal domains, lacking the statutory grounding and
+cultural specificity required for high-stakes domains like
+CSA in India.
+A. Motivation
+Building trustworthy legal support tools for CSA cases
+in India is critically urgent, given the country’s linguistic
+diversity, inconsistent legal documentation, and varied
+judicial interpretations. Developing AI systems for this
+domain requires more than just document retrieval—
+it requires contextual legal reasoning, multi-perspective
+evaluation, and verifiable outputs. Existing datasets such
+as CaseHOLD [6], ECtHR [7], and LegalBench [8] have
+advanced legal QA, but none address victim-centric,
+statutory-grounded reasoning in the Indian CSA context.
+To the best of our knowledge, there is no framework
+and publicly available dataset that supports multiplechoice legal QA with verified justifications tailored to
+this domain. Addressing these challenges requires domainadapted QA frameworks that can reason contextually
+and provide verifiable legal justifications, capabilities not
+supported by existing systems.
+B. Overview of Our Framework
+To overcome the limitations of existing legal QA systems, which often lack explainable reasoning, statutory
+traceability in regulation-specific domains like Indian
+CSA law, we introduce a multi-stage, legally grounded
+framework designed for trustworthy multiple-choice legal
+question answering (MCQ-QA). Our pipeline is tailored
+to generate interpretable responses grounded in Indian
+statutory language and judicial reasoning.
+As illustrated in Figure 1, the process begins with a
+retrieval-augmented generation (RAG) module [9] that
+extracts relevant context by querying a FAISS-based vector store over segmented court rulings and legal statutes.
+This is followed by structured ARR (Analyze, Reason,
+Respond) prompting, which guides the model through
+logical, interpretable steps and reduces hallucinations by
+separating analysis, legal justification, and final answers
+0000–0000/00$00.00 © 2021 IEEE [10].
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 3
+ARR Critique-DebateAdjudicate
+Chain of
+Verification
+RAG Retrieval
+VERA
+User Query
+Answer to the query with
+reasoning
+Fig. 1: Flowchart of our multi-stage MCQ-QA pipeline.
+We then apply a Critique-Debate-Adjudicate (CDA)
+[11] mechanism, where simulated legal agents: a Challenger, a Defender, and a Judge, engage in adversarial
+reasoning to refine answer quality. Next, a Chain-ofVerification (CoV) [12] module validates statutory and
+factual consistency, revising outputs if legal misalignment
+is detected.
+Finally, the VERA (Verified and Reasoned Answer) ensemble combines verified outputs and structured reasoning
+to produce legally coherent, auditable answers. This full
+pipeline ensures that each response is not only accurate
+but also transparent and legally grounded—crucial for
+high-stakes, sensitive contexts like CSA litigation in India.
+C. Contributions
+In this paper, we address the critical gap in AIsupported legal reasoning for child protection by introducing the Child Abuse Legal Support Dataset (CALSD)—a
+novel dataset tailored for legal QA in the Indian CSA
+context. Our contributions are as follows:
+• We propose a multi-stage legal reasoning pipeline that
+integrates retrieval-augmented generation (RAG),
+structured prompting (ARR), adversarial reasoning
+(CDA), and consistency checks (CoV), culminating
+in a VERA ensemble for trustworthy legal QA.
+• We constructed CALSD, a dataset of 10,000 MCQstyle QA pairs derived from Indian CSA court rulings, each grounded in statutory provisions from the
+POCSO Act, IPC, and JJ Act.
+• Each QA pair includes multiple-choice options and a
+verified legal rationale, supporting explainability and
+traceability in model reasoning.
+• Our framework shows up to 21.19% of improvement on NLI Scores over pretrained baselines and
+upto 19.50% of improvement over finetuned baselines
+(LLaMA-3.1-3B, Qwen2.5-7B, LLaMA-3.1-8B).
+• We conduct a citation density analysis, showing that
+our system consistently references relevant statutes
+at higher rates than baseline QA systems.
+• We validate model outputs through expert human
+evaluation on five dimensions—legal accuracy, rationale quality, citation relevance, ethical robustness,
+and linguistic clarity—confirming the practical viability of our approach.
+The remainder of this paper is organized as follows.
+Section II reviews related work in legal QA, reasoning
+frameworks, and sensitive-domain NLP. Section III describes the construction and characteristics of the CALSD
+dataset. Section IV details our multi-stage legal reasoning
+framework, including each module in the pipeline. Section V outlines the evaluation metrics used. Section VI
+presents quantitative results and comparative analysis.
+Section VII provides a qualitative evaluation of model
+outputs. Finally, Section VIII summarizes key findings
+and future directions.
+II. Related Work
+Our research draws from four intersecting areas: (1)
+Legal Question Answering and NLP in Law, (2) Legal
+Reasoning and Explainability, (3) NLP Applications in
+Child Protection and Sensitive Legal Domains, and (4)
+Gap Analysis and Positioning. While no existing work
+directly addresses CSA-related legal reasoning in the
+Indian context, significant advances in adjacent domains
+provide valuable foundations.
+A. Legal Question Answering and NLP in Law
+Significant progress in legal NLP has enabled tasks
+such as document classification, statute retrieval, and
+question answering across various jurisdictions (Table I).
+Most prior efforts rely on transformer-based architectures,
+including BERT variants and retrieval-augmented reasoning. However, these are often tailored to structured
+legislative corpora in Western or East Asian contexts, with
+limited focus on Indian jurisprudence or child-related legal
+frameworks. Crucially, existing systems prioritize surfacelevel answer retrieval over interpretive legal reasoning or
+context-sensitive remedy generation—capabilities that are
+central to CSA-related legal assistance.
+B. Legal Reasoning and Explainability
+The field of legal reasoning has seen advances in rhetorical role identification, graph‑based statute inference, and
+domain‑specific language modeling (Table II). Models like
+PARAMANU‑AYN and LeSICiN demonstrate the value of
+pretraining on Indian legal corpora and leveraging citation
+networks for interpretability. However, these approaches
+typically stop at document understanding or summary
+generation rather than integrating a question–answer–
+rationale pipeline. They also do not explicitly formulate
+structured remedy recommendations.
+C. NLP for Child Protection and Sensitive Legal Domains
+Recent benchmarks and applications in socially sensitive
+domains—bias evaluation (BBQ, AAVENUE), privacy
+assessment, and child‑safety testing of LLMs—underscore
+ethical imperatives in NLP (Table III). Rule‑based
+risk‑factor extraction and child‑user safety models highlight domain challenges, yet none tackle legal remedy
+identification for CSA survivors or contextualize findings
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 4
+TABLE I: Representative Works in Legal QA and NLP
+Work Legal Domain Task Technique Dataset Key Contribution
+Chalkidis et al.
+(2020) [4]
+EU Legislation Legal Document
+Classification
+BERT Variants EURLEX Introduced LEGAL-BERT models
+pre-trained on legal corpora
+Chalkidis et al.
+(2021) [13]
+EU Legislation Multi-label Classification
+BERT + Hierarchical Attention
+EURLEX Deep legal document classification
+Leitner et al.
+(2021) [14]
+Chinese Law Law article
+recommendation
+based on given
+case
+Multi-level matching network
+Custom
+Dataset (CJO)
+Developed model for fine grained
+recommendations
+Mavi et al.
+(2023) [15]
+Legal and
+Financial
+Domains
+Legal QA RetrievalAugmented Chainof-Thought
+Proprietary Enhanced QA in semi-structured
+domains using retrieval-augmented
+reasoning
+Abdallah et al.
+(2023) [16]
+Various Legal
+Systems
+Survey of Legal QA
+Systems
+Deep Learning
+Models
+Multiple
+Datasets
+Comprehensive review of legal QA
+datasets and models
+Yin et al.
+(2024) [17]
+Chinese Law Multi-type Legal
+QA
+Coreference-aware
+MRC
+Custom
+Dataset
+Improved question understanding
+in multi-type legal QA systems
+Louis et al.
+(2024) [5]
+French Statutory Law
+Long-form Legal
+QA
+RetrievalAugmented LLMs
+LLeQA Developed interpretable long-form
+QA system with new dataset
+TABLE II: Representative Works in Legal Reasoning and Argument Generation
+Work Legal Domain Task Technique Dataset Key Contribution
+Bhattacharya
+et al. (2019)
+[18]
+Indian Law Rhetorical Role
+Identification
+Deep Neural Networks
+Supreme Court
+Judgments
+Automated identification of rhetorical roles in legal judgments.
+Kien et al.
+(2020) [19]
+Vietnamese
+Law
+Legal QA Neural
+Attentive Text
+Representation
+Custom
+Vietnamese
+Legal QA
+Dataset
+Demonstrated improved performance over retrieval-based methods using attentive neural networks.
+Xiao et al.
+(2021) [20]
+Chinese Law Legal Document
+Understanding
+Longformerbased Pre-trained
+Language Model
+Multiple
+Chinese Legal
+Datasets
+Introduced Lawformer for processing long legal documents, enhancing performance in various legal
+NLP tasks.
+Parikh et al.
+(2021) [21]
+Indian Law Legal Document
+Summarization
+Weakly Supervised
+Learning
+LawSum
+Dataset
+Developed a large-scale dataset
+and summarization approach for
+Indian legal documents.
+Paul et al.
+(2022) [22]
+Indian Law Legal Statute Identification
+Heterogeneous
+Graph Neural
+Networks
+Custom Indian
+Legal Dataset
+Proposed LeSICiN model leveraging citation networks for statute
+identification.
+Nguyen et al.
+(2024) [23]
+Multilingual
+Legal Systems
+Legal Document
+Retrieval
+Attentive Deep
+Neural Networks
+COLIEE Proposed hierarchical
+architectures with sparse attention
+for effective legal document
+retrieval across languages.
+Niyogi and
+Bhattacharya
+(2024) [24]
+Indian Law Legal Language
+Modeling
+Pretrained LLMs Indian Legal
+Corpus
+Introduced PARAMANU-AYN,
+a legal domain-specific language
+model trained from scratch.
+Joshi et al.
+(2024) [25]
+Indian Law Legal Text Understanding
+Benchmarking IL-TUR
+Dataset
+Presented IL-TUR, a benchmark
+for Indian legal text understanding
+and reasoning.
+within Indian jurisprudence. By integrating statutory
+retrieval with context‑aware reasoning, our work pioneers
+a culturally grounded, ethically informed QA framework
+for child protection law.
+D. Gap Analysis and Contribution
+Despite recent progress in legal QA, interpretability,
+and NLP for sensitive domains, there remains no publicly
+available benchmark that integrates key requirements
+specific to Indian child protection law. Existing datasets
+lack explicit grounding in Indian statutory frameworks, do
+not support multiple-choice formats with legally justified
+rationales, and fall short in modeling structured reasoning
+for remedy identification in CSA contexts.
+To address this gap, we propose a multi-stage legal reasoning framework for CSA cases that integrates
+retrieval-augmented prompting, argument-based generation, and verification to produce interpretable, statutealigned answers. To rigorously evaluate this framework,
+we introduce CALSD—a curated dataset of judgmentderived, multiple-choice questions with legally grounded
+rationales. Together, our framework and dataset establish
+the first comprehensive benchmark for child protection
+QA under Indian law.
+III. Dataset Construction
+We introduce the Child Abuse Legal Support Dataset
+(CALSD)—a comprehensive, high-quality benchmark designed to support question answering, legal remedy identification, and statutory reasoning within the Indian judicial
+context. CALSD comprises (1) authentic legal judgments
+and statutes, and (2) structured multiple-choice QA pairs
+annotated with statutory legal rationales. This section
+details our methodology for case curation, statutory
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 5
+TABLE III: Representative Works in NLP Applications to Sensitive Legal and Social Domains
+Work Domain Task Technique Dataset Key Contribution
+Parrish et al.
+(2021) [26]
+Social Bias Bias Benchmarking QA Bias Evaluation
+BBQ Dataset Introduced BBQ, a benchmark to
+evaluate social biases in QA systems across protected classes.
+Coulthard et
+al. (2022) [27]
+Child
+Protection
+Case Factor Identification
+Rule-Based NLP Cafcass Court
+Statements
+Identified 13 risk factors in child
+protection cases using NLP on
+5000 court statements.
+Huang et al.
+(2024) [28]
+Privacy Privacy Risk Assessment
+Benchmarking Various NLP
+Models
+Presented a comprehensive benchmark to assess privacy risks in NLP
+models through various attacks.
+Gupta et al.
+(2024) [29]
+Dialect Bias Bias Detection in
+NLU
+AAVENUE Benchmark
+AAVENUE
+Dataset
+Developed a benchmark to detect
+biases in NLU tasks for African
+American Vernacular English.
+Rath et al.
+(2025) [30]
+Child Safety LLM Safety Evaluation
+Child User Models Multiple LLMs Developed child-specific user models to assess and highlight safety
+gaps in LLMs for children.
+grounding, QA generation using LLMs, data formatting,
+and quality verification.
+A. Judgment Corpus Curation
+We collected 6,000 full-text judicial documents from
+Indian courts using the Indian Kanoon API [31]. This
+included cases from the Supreme Court [32] as well as
+High Courts such as Karnataka, Madras, Delhi, Bombay,
+Kerala, Punjab and Haryana, and Allahabad [33], among
+others. To identify relevant child protection cases, we
+programmatically filtered judgments that referenced the
+Protection of Children from Sexual Offences (POCSO)
+Act, issues related to child trafficking, custodial care, or
+physical and sexual abuse, and legal reasoning involving
+the rights and remedies of minor victims. All documents
+were processed in English, and only those with sufficient
+narrative context to support statutory or interpretive
+reasoning were retained.
+B. Statutory Resource Compilation
+To ensure the jurisdictional and statutory validity of
+the generated QA pairs, we compiled a reference corpus
+of Indian child protection laws from official government
+sources, including the National Commission for Protection
+of Child Rights (NCPCR) [34]. This statutory corpus
+includes the Protection of Children from Sexual Offences
+(POCSO) Act [2], the Juvenile Justice (Care and Protection of Children) Act [3], the Child Labour (Prohibition
+and Regulation) Act [35], and the Commissions for Protection of Child Rights Act [36]. Relevant excerpts from
+these statutes were embedded into the prompt context
+during QA generation to ensure that responses remained
+legally faithful and contextually appropriate.
+C. Question-Answer Generation with GPT-4
+Adlakha et al. [37] show that GPT‑4 significantly
+outperforms in both correctness and faithfulness when
+generating QA data. We used GPT-4 to generate structured legal QA samples. Each case was segmented into
+contextually complete paragraphs containing explicit child
+abuse or child protection legal content. From each segment, the model was prompted to produce two multiplechoice questions aligned with statutory reasoning. Our
+prompts were carefully engineered to enforce legal fidelity,
+interpretive depth, and jurisdictional consistency. A representative instruction was as follows:
+Task: Generate legal remedy questions for child
+abuse victims using the passage below. Each
+question must include: a passage, a legal question, four answer options (A–D), the correct
+option, and a statutory reasoning explanation.
+Ensure relevance to Indian child protection laws
+(POCSO, JJ Act, etc.).
+This process yielded 12,000 multiple-choice QA pairs,
+each grounded in case-specific legal context and justified
+using applicable statutory provisions.
+D. Data Format and Structure
+Each QA instance in CALSD is stored in a structured
+JSON format with fields for the passage, question, answer
+options, correct answer, and rationale. Figure 2 shows the
+abstract schema, and Figure 3 illustrates a real instance
+from our dataset.
+Fig. 2: Schematic JSON structure used for MCQ samples
+in CALSD.
+{
+” passage ” : ” . . . ” ,
+” question ” : ” . . . ” ,
+”A” : ” . . . ” ,
+”B” : ” . . . ” ,
+”C” : ” . . . ” ,
+”D” : ” . . . ” ,
+” correct_answer ” : ” Full Text of the Option ” ,
+” reasoning ” : ” . . . ”
+}
+E. Human Verification and Gold Standard Subset
+To ensure the legal correctness and overall quality of
+CALSD, we adopted a multi-stage verification pipeline
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 6
+{
+"Passage": "X vs State Of Nct Of Delhi (Acting Through Its ... on 20 October, 2022. The passage emphasizes
+that the process of victimization can strip survivors of their defenses and result in long-term trauma. To
+provide comprehensive support, justice systems must not only prosecute the offenders but also
+understand the personal experiences of each survivor. Legislative frameworks like the POCSO Act are
+designed to ensure that child victims receive favorable treatment and prompt compensation,
+recognizing the critical need for rehabilitation services tailored to the specific circumstances of the
+child.",
+"Question": "What does the passage convey about the necessity for a tailored approach towards the
+rehabilitation of child survivors of sexual abuse? Why are legislative frameworks like the POCSO Act
+crucial in this context?",
+"A": "Tailored rehabilitation is unnecessary; a generic approach suffices for all victims.",
+"B": "Legislative frameworks like POCSO ensure swift action and accommodation for individual survivor
+ needs and experiences.",
+"C": "The passage indicates that there is no need for legislative frameworks for child survivors.",
+"D": "Legislative provisions focus almost exclusively on punishing offenders, neglecting survivor needs.",
+"Correct Answer": "Legislative frameworks like POCSO ensure swift action and accommodation for individual
+survivor needs and experiences.",
+"Reasoning": "The passage makes it clear that the POCSO Act and similar frameworks are not only important
+for punishment but critically serve to address the survivors' unique needs, promoting a structured
+response that encompasses both legal protection and rehabilitation."
+}
+Fig. 3: Example QA instance from the CALSD dataset
+that combines automated consistency checks with manual expert annotation. This approach aligns with best
+practices established in prior works on legal QA dataset
+construction [37], [38]. Each QA instance was evaluated
+along three critical dimensions: topical relevance, answer
+accuracy, and reasoning validity. A passage was considered
+topically relevant only if it directly pertained to child
+abuse or statutory child protection. The answer was
+required to accurately reflect the legal conclusion and
+statutory interpretation, while the accompanying reasoning needed to align with Indian legal statutes without
+introducing extralegal justifications.
+All entries were independently reviewed by two trained
+legal annotators (postgraduate law students). Topical
+relevance was assessed based on unanimous agreement
+between the annotators. In cases of disagreement on
+answer accuracy or reasoning validity, a third annotator
+was involved, and the final label was determined by
+majority vote. Inter-annotator agreement scores were high,
+with Cohen’s Kappa values of 0.85 for answer correctness
+and 0.81 for reasoning validity. After verification, 10,000
+out of the original 12,000 QA pairs satisfied all quality
+criteria and comprise the CALSD benchmark set used in
+our evaluations.
+IV. Methodology
+This section outlines our multi-stage pipeline for legal
+multiple-choice question answering (MCQ-QA), combining retrieval-augmented generation (RAG) [39], structured
+reasoning prompts, a critique-debate mechanism, and
+chain-of-verification. The goal is to ensure legal faithfulness, interpretability, and robustness in AI-assisted legal
+response generation. The overall architecture is illustrated
+in Figure 4.
+A. Retrieval-Augmented Generation (RAG)
+We adopt the Retrieval-Augmented Generation (RAG)
+[9] paradigm to ground language model responses in relevant legal documents. This enhances factual correctness
+and mitigates hallucination in downstream legal reasoning
+tasks.
+1) Legal Corpus Indexing: Let the legal corpus be
+represented as a collection of documents:
+D = {d1, d2, . . . , dn}. (1)
+Each document di
+is divided into smaller overlapping
+segments:
+Ci = {ci1, ci2, . . . , cim}, (2)
+using a recursive character text splitter with a chunk size
+of 500 characters and an overlap of 50 characters. The
+total chunk collection is:
+C =
+∪n
+i=1
+Ci
+. (3)
+Each chunk c ∈ C is converted into a dense embedding
+vector using a domain-adapted embedding function fembed
+[40]
+1
+:
+vc = fembed(c). (4)
+All chunk embeddings {vc} are stored and indexed
+using the FAISS similarity search library [41] to facilitate
+efficient top-K retrieval.
+1HuggingFace model
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 7
+ARR Prompting & Legal
+Reasoning
+[Question, Options]
+[Retrieved Context]
+Analyze
+Reason
+Critique
+Model
+Critique
+Defender
+Model
+Defence
+Judge
+Winner: Challenger/Defender
+Judgement for choosing winner
+Final Answer
+Final Reasoning
+Critique-Debate-Adjudicate
+framework
+Respond
+[A, R]
+Option-wise
+Support
+Assessment
+Verified
+Reasoning
+Generation
+Final Answer
+Verification
+Chain of Verification
+VERA:
+Verified ARRenhanced Response
+Aggregation
+Chunks
+Embeddings
+Legal
+Corpus
+FAISS
+Index
+Retrieved
+Context
+Question
+and
+Options
+Fig. 4: Proposed framework
+Given a legal case query, the RAG module retrieves relevant statutory and precedent context. ARR-based prompting generates initial
+legal reasoning. The Critique-Debate-Adjudicate (CDA) module then refines this output through adversarial legal analysis. Finally, the
+Chain-of-Verification (CoV) module checks for statutory consistency, and the VERA ensemble produces a final auditable response.
+2) Query Construction and Retrieval: Given a legal
+multiple-choice question Q with options {A, B, C, D}, we
+construct a composite query string:
+Q
+′ = “{Q} Options: A: {A}, B: {B}, C: {C}, D: {D}”.
+(5)
+This query Q′
+is embedded into vector space using the
+same embedding model:
+vq = fembed(q
+′
+). (6)
+The top-K most relevant chunks {c
+∗
+1
+, c∗
+2
+, . . . , c∗
+K} are
+retrieved by maximizing cosine similarity:
+c
+∗
+k = arg max
+c∈C
+cos(vq, vc). (7)
+The final retrieved context is obtained by concatenating
+the top-K chunks:
+retrieved_context(C) = ⊕
+K
+k=1
+c
+∗
+k
+. (8)
+B. ARR Prompting and Legal Reasoning via LLMs
+To ensure legal faithfulness, interpretability, and consistency in reasoning, we adopt a structured prompting
+framework termed ARR (Analyze, Reason, Respond) [10].
+This framework guides the language model through a
+multi-step reasoning process explicitly grounded in the
+retrieved legal context.
+ARR Framework: Given the retrieved legal context and
+a multiple-choice question with options {A, B, C, D}, the
+ARR prompting sequence follows three steps:
+• Analyze: Read and interpret the retrieved legal context, identifying relevant legal principles and facts
+applicable to the question.
+L = Analyze(C, Q) ⊆ C (9)
+• Reason: Compare each option against the context,
+using explicit legal reasoning to evaluate their validity
+and eliminate incorrect alternatives.
+Score(Oi) = freason(Oi
+, L), i ∈ {A, B, C, D} (10)
+• Respond: Select the most legally consistent option
+based solely on the retrieved evidence, and generate
+a detailed explanation.
+A = arg max
+Oi
+Score(Oi) (11)
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 8
+To maintain grounding and reduce hallucinations, we
+explicitly instructed the language model to rely solely
+on the retrieved context, avoiding the introduction of
+prior legal knowledge, external precedents, or unstated
+assumptions. It was required to refer to the selected
+answer by quoting its full text rather than using option
+labels (e.g., “Option A”), and to justify both the correct
+choice and the elimination of alternatives strictly based
+on contextual legal evidence.
+Output Schema: We use Qwen2.5-7B-Instruct [42], a
+long-context, instruction-tuned language model capable of
+following structured prompts and generating interpretable
+outputs. For each input comprising the retrieved context
+and question with options, the model produces a structured response in strict JSON format:
+{
+” Question ” : ”Given multiple - choice l e g a l
+question ” ,
+”Answer ” : ” Full text of the s e l e c t e d option
+” ,
+”Reasoning ” : ” Detailed explanation based
+s t r i c t l y on the r e t r i e v e d context ,
+j u s t i f y i n g why the chosen option i s
+correct and others are not . ”
+}
+Each generated response is treated as a preliminary legal
+hypothesis—not a final answer—pending further critique,
+counter-argumentation, and verification in subsequent
+stages of the pipeline. This structured reasoning output
+feeds into a critique-verification pipeline to iteratively
+refine legal faithfulness and reduce potential bias or error.
+C. Critique-Debate-Adjudicate Framework
+To improve factual correctness, legal faithfulness, and
+robustness of the model-generated answers, we introduce a
+structured Critique-Debate-Adjudicate (CDA) framework
+[11]. This multi-stage protocol engages a challenger, a
+defender, and a final judge, instantiated using distinct
+roles and instructions over high-performing, open-weight
+LLMs.
+a) Critique Model (Mcritique).: Given the original
+question Q, retrieved context C, Answer A, and R is
+the Reasoning field from the ARR output. The challenger
+model Mcritique is tasked with identifying flaws, logical inconsistencies, unsupported claims, or misalignments with
+the provided legal context.
+Rˆ
+crit = Mcritique(Q, C, A, R) (12)
+Here, Rˆ
+crit denotes the critique statement highlighting potential legal or logical deficiencies in the original
+response. We instantiate this role using Llama-3.1-8BInstruct [43], chosen for its fine-tuned critique performance
+and alignment with fault-finding tasks. The model is
+prompted to remain grounded in the context C and avoid
+speculative objections.
+b) Defense Model (Mdefender).: To simulate adversarial robustness, the defender model Mdefender is provided
+the original tuple ⟨Q, C, A, R⟩ and the critique Rˆ
+crit. Its
+goal is to defend the initial answer and rebut flawed or
+misaligned critiques.
+Rˆ
+def = Mdefender(Q, C, A, R, Rˆ
+crit) (13)
+The defender generates Rˆ
+def, a structured rebuttal
+reinforcing the original answer’s legal validity using only
+the retrieved context. We use Qwen2.5-7B-Instruct, a
+model known for follow-up reasoning and long-context
+comprehension.
+c) Judge Model (Mjudge).: In the final adjudication
+stage, a neutral judge model Mjudge receives the complete
+debate transcript ⟨Q, C, A, R, Rˆ
+crit, Rˆ
+def⟩, and outputs a
+final verdict:
+(W, ˆ J, ˆ Aˆ
+final, Rˆ
+final) = Mjudge(Q, C, A, R, Rˆ
+crit, Rˆ
+def)
+(14)
+Here, Wˆ denotes the declared winner (Challenger or
+Defender), Jˆ provides the legal justification, Aˆ
+final is the
+revised legally valid answer, and Rˆ
+final is the final rationale
+grounded exclusively in C. Although implemented using
+Llama-3.1-8B-Instruct, the judge model is instantiated
+independently with role-specific prompts and no access to
+outputs from earlier critique stages, ensuring objectivity
+in verdict formulation.
+All outputs of the CDA framework—including intermediate critiques, rebuttals, and final judgments—are
+serialized into structured JSON format. This enables
+auditability and reproducibility of each legal QA instance,
+making it suitable for ablation studies and benchmark
+construction.
+D. Chain of Verification
+To enforce legal factuality, contextual consistency, and
+auditability, we introduce a structured Chain of Verification (CoV) stage [12]. This module operates after
+the Critique-Debate-Adjudication pipeline and simulates
+a formal legal peer-review process. Its objective is to
+independently verify—or correct—the final answer Aˆ
+final
+and its accompanying rationale Rˆ
+final, relying solely on
+the retrieved legal context C and structured outputs from
+prior stages.
+1) Input Structure and Notation: The verifier agent V
+receives an input tuple:
+(Q, O, Aˆ
+final, Rˆ
+final, C, W, ˆ Jˆ)
+where Q is the original legal question, and O =
+{O1, O2, O3, O4} denotes the multiple-choice options. The
+retrieved legal context used for grounding is represented
+by C. The judge model provides the final answer Aˆ
+final
+along with its associated rationale Rˆ
+final. The outcome of
+the critique–defense debate is captured by the declared
+winner Wˆ ∈ {Defender, Challenger}, and Jˆ contains the
+justification for this decision.
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 9
+2) Verification Process: The verifier V performs a ruledriven, deterministic evaluation across multiple dimensions:
+a) Option-Wise Support Assessment: Each option
+Oi ∈ O is independently checked for legal validity with
+respect to the context C:
+Support(Oi
+, C) ∈ {Supported, Not Supported} (15)
+Each judgment includes a concise legal justification
+referencing explicit clauses, facts, or precedents from C.
+b) Final Answer Verification: The model assesses
+whether the adjudicated answer Aˆ
+final is legally defensible
+by evaluating its consistency with the retrieved context
+C, the coherence and completeness of the accompanying
+rationale Rˆ
+final, and its alignment with the debate outcome
+(W, ˆ Jˆ). Based on this assessment, the model issues a
+verification verdict:
+Verdict(Aˆ
+final) ∈ {Fully Verified,
+Partially Verified,
+Not Verified}
+(16)
+c) Verified Reasoning Generation (Rˆ
+verified): Irrespective of the verification outcome, the verifier V generates a revised rationale Rˆ
+verified. If the answer is Fully
+Verified, it reaffirms Aˆ
+final through traceable, contextgrounded argumentation. If Partially Verified or Not
+Verified, it identifies flaws in Rˆ
+final and reconstructs a
+corrected rationale strictly using information from C.
+d) Deterministic Answer Correction (if needed): If
+Aˆ
+final is not fully supported, a corrected answer ACoV is
+deterministically selected:
+ACoV = arg max
+Oi∈O
+LegalJustifiability(Oi
+| C) (17)
+Where LegalJustifiability maps each Oi to a binary score
+indicating direct support in the context. A justification is
+also generated for ACoV.
+3) Output Schema: The structured output of V includes:
+• Option Verdicts: For each Oi ∈ O,
+Support(Oi
+, C) ∈ {Supported, Not Supported}
+• Final Answer Verdict:
+Verdict(Aˆ
+final) ∈ {Fully Verified,Partially Verified,
+Not Verified}
+• Verified Reasoning (Rˆ
+verified):
+A step-by-step legal rationale constructed by V,
+consistent with C
+• Corrected Answer (if applicable):
+ACoV, with accompanying legal justification if
+ACoV ̸= Aˆ
+final
+The verifier V is implemented using Llama-3.1-8BInstruct. Prompt templates are designed to simulate legal
+auditing by conducting per-option assessments, checking
+alignment with the debate outcome (W, ˆ Jˆ) without overriding contextual evidence, generating revised rationales
+(Rˆ
+verified), and deterministically correcting the answer
+when legal justification is lacking.
+E. VERA: Verified ARR-enhanced Response Aggregation
+The Verified ARR-enhanced Response Aggregation
+(VERA) stage synthesizes a final legal response that is
+both verifiable and interpretively coherent. It merges two
+complementary components:
+• Rˆ
+verified: the explanation generated by the Verifier
+after validating Aˆ
+final or producing a corrected answer
+ACoV.
+• Rˆ
+final: the rationale produced by the Judge model
+during the critique-debate-adjudication phase.
+a) Merging Strategy.: To reconcile these two outputs,
+we define a structured merge function:
+VERA_Merge(Rˆ
+final, Rˆ
+verified) → R
+∗
+(18)
+Let:
+R
+∗
+(i) =
+
+
+
+Rˆ
+verified(i), if i ∈ FactualClaimSet
+Rˆ
+final(i), if i ∈ InterpretiveContentSet
+and consistent
+(19)
+This ensures that: If Rˆ
+verified and Rˆ
+final are mutually
+consistent, we retain the stylistic and analogical richness
+of Rˆ
+final and enhance it with verified references from
+Rˆ
+verified. If there is a factual conflict, the Verifier’s claims
+take precedence. The Judge’s rationale is included only
+in portions that provide stylistic interpretation without
+contradicting verified facts.
+b) Final Answer Determination.: The final answer
+A∗
+returned to the user is:
+A
+∗ =
+{
+Aˆ
+final, if Verdict(Aˆ
+final) = Fully Verified,
+ACoV, otherwise
+(20)
+To ensure procedural integrity and avoid intra-model
+leakage, the Verifier operates independently with no access
+to the debate or critique history. It reviews only the
+tuple (Q, O, C, Aˆ
+final, Rˆ
+final), enabling objective, post-hoc
+evaluation while maintaining prompt orthogonality and
+architectural efficiency.
+VERA is implemented using LLaMA-3.2-3B, fine-tuned
+to perform alignment of factual and interpretive content.
+Gold supervision is derived from verified CDA outputs to
+guide stylistic merging and content reconciliation.
+V. Evaluation and Metrics
+We evaluate the effectiveness of our legal questionanswering framework using two primary metrics: classification accuracy for multiple-choice questions and explanation quality measured via Natural Language Inference
+(NLI) entailment scoring [44].
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 10
+A. MCQ Classification Accuracy
+To assess how accurately the model predicts the correct
+answer from a set of four options, we define the classification accuracy as:
+Accuracy =
+1
+N
+∑
+N
+i=1
+I(ˆoi = oi), (21)
+where N is the total number of test samples, oi
+is the
+ground-truth option for the i-th sample, oˆi
+is the predicted
+option, and I(·) is the indicator function.
+1) Semantic Option Matching: Instead of predicting
+discrete labels (A, B, C, D), the model generates a freetext answer. To map this answer to one of the predefined
+options, we use semantic similarity:
+• We embed the predicted answer aˆi and all candidate
+options {o
+(j)
+i
+}
+4
+j=1 using a SentenceTransformer model
+(paraphrase-mpnet-base-v2 [45]
+2
+).
+• We compute cosine similarity between the predicted
+answer and each option:
+sim(j) =
+⟨emb(ˆai), emb(o
+(j)
+i
+)⟩
+∥emb(ˆai)∥ · ∥emb(o
+(j)
+i
+)∥
+, (22)
+where emb(·) denotes the sentence embedding function.
+• The predicted option oˆi
+is the one with the highest
+similarity:
+oˆi = arg max
+j
+sim(j)
+. (23)
+This approach helps reduce hallucinations and enforces
+semantic grounding in the final selection.
+B. NLI-Based Entailment Scoring
+To assess the logical consistency and faithfulness of
+model-generated explanations, we employ a Natural Language Inference (NLI) model, specifically facebook/bartlarge-mnli3
+. This model computes the probability that a
+model-generated explanation rˆi entails the gold reference
+explanation ri
+.
+1) Entailment Probability: Let ei = P(entailment |
+rˆi
+, ri) denote the entailment confidence score for the ith sample. This score reflects how strongly the generated
+explanation supports the reference.
+2) Scoring Protocol:
+• Samples where either the reference or the generated
+explanation is missing or null are excluded from
+evaluation.
+• The final NLI entailment score is computed as the
+mean over all valid samples:
+NLI Score =
+1
+M
+∑
+M
+i=1
+ei
+, (24)
+where M is the total number of valid datapoints.
+This metric captures how well the model’s legal reasoning aligns with human-annotated justifications.
+2https://huggingface.co/sentence-transformers/
+paraphrase-mpnet-base-v2
+3https://huggingface.co/facebook/bart-large-mnli
+VI. Results and Analysis
+A. Implementation Details
+Our implementation is based in Python, utilizing several
+libraries and frameworks for data processing and model
+training. Preprocessing and utility functions employ json,
+yaml, os, time, logging, warnings, and random. We use
+pandas, numpy, and scikit-learn for structured data manipulation, and PyTorch with HuggingFace’s transformers,
+datasets, and sentence transformers for model training.
+Tokenizer and model loading are performed using AutoTokenizer and AutoModelForCausalLM. For LoRA finetuning, we leverage peft and bitsandbytes, enabling 8-
+bit training for memory efficiency. A retry mechanism is
+implemented with the tenacity library. We also use the
+openai SDK for benchmarking.
+To ensure reproducibility, we set all random seeds
+with seed_everything(42). Experiments were run on three
+GPU configurations: NVIDIA H100 SXM5 (80 GB, 2502.7
+GB/s), NVIDIA RTX 6000 Ada (45 GB, 676.0 GB/s), and
+NVIDIA A100 SXM4 (80 GB, 1645.2 GB/s), backed by
+AMD EPYC CPUs and RAM ranging from 96 GB to 224
+GB.
+1) Dataset Splits: We curated a dataset of 10,000 QA
+samples derived from Indian court documents, which was
+split as follows:
+• Training Set: 8,000 samples used for model training
+and fine-tuning.
+• Test Set: 2,000 samples used for evaluation.
+2) Fine-tuning Hyperparameters and Training Arguments: We used the hyperparameters and training arguments listed in Table IV to fine-tune all baseline models
+under the LoRA setup.
+TABLE IV: LoRA Fine-Tuning Hyperparameters and
+Training Arguments Used for All Baselines
+Component Hyperparameter & Value
+Bits and Bytes load_in_8bit = true
+LoRA Parameters
+r = 8
+lora_alpha = 16
+lora_dropout = 0.1
+bias = none
+task_type = CAUSAL_LM
+target_modules = [q_proj, k_proj, v_proj,
+o_proj, gate_proj, up_proj, down_proj]
+Training Arguments
+num_train_epochs = 5
+per_device_train_batch_size = 4
+gradient_accumulation_steps = 4
+optim = paged_adamw_8bit
+learning_rate = 2e-5
+weight_decay = 0.01
+bf16 = true
+max_grad_norm = 1.0
+max_steps = -1
+warmup_ratio = 0.03
+group_by_length = true
+lr_scheduler_type = cosine
+evaluation_strategy = no
+report_to = wandb
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 11
+B. Performance Comparison
+Table V reports the performance of selected LLMs
+in both pretrained and fine-tuned settings. Evaluation
+is based on two key metrics: average classification accuracy and NLI entailment score. We also include results from our proposed multi-stage reasoning framework,
+which integrates RAG, ARR prompting, a critique-debateadjudicate stage, and a chain-of-verification mechanism.
+All stages operate on pretrained LLMs without any
+additional fine-tuning or distillation. Final predictions are
+derived by aggregating outputs from the ARR and chainof-verification stages. Figure 5 visually illustrates the NLI
+scores across the same setups, highlighting the significant
+improvement of our multi-stage reasoning framework over
+all baselines.
+TABLE V: Performance of Pretrained vs. Fine-Tuned
+Baselines, Compared to Our Multi-Stage Reasoning
+Framework
+Model Setting Accuracy NLI Size
+(%) Score (in MB)
+LLaMA-3.1-8B Pretrained 93.44 0.6714 –
+Fine-tuned 94.62 0.6700 96.5
+Qwen2.5-7B Pretrained 95.69 0.6670 –
+Fine-tuned 95.63 0.6700 92.2
+LLaMA-3.2-3B Pretrained 93.68 0.6588 –
+Fine-tuned 89.03 0.6681 62.9
+Our Framework - 93.80 0.7984 25.2
+Fig. 5: Comparison of NLI scores for pretrained and finetuned models versus our multi-stage reasoning framework.
+Discussion of Results: The experimental results highlight nuanced trade-offs between model size, fine-tuning,
+and performance:
+• LLaMA-3.1-8B: Fine-tuning yields a small improvement in accuracy (+1.18%) but a slight drop in NLI
+entailment score, suggesting marginal overfitting or
+reduced generalization in explanation quality.
+• Qwen2.5-7B: Accuracy remains nearly unchanged
+after fine-tuning, but the entailment score improves,
+indicating enhanced logical coherence in generated
+responses.
+• LLaMA-3.2-3B: Notably, fine-tuning improves the
+NLI score (+0.0093), but causes a drop in classification accuracy, which may imply underfitting or
+inadequate representation capacity at this smaller
+scale.
+• Our Framework: Our multi-stage reasoning framework outperforms both pretrained and fine-tuned
+baselines in terms of NLI score, with improvements
+ranging from approximately 19% to 21% as shown
+in Figure 6 while maintaining competitive accuracy,
+validating the effectiveness of our multi-stage framework.
+Fig. 6: Percentage improvement in NLI score of our multistage reasoning framework compared to both pretrained
+and fine-tuned baseline models.
+Overall, fine-tuning make no significant change in the
+explanation quality (as per NLI score) and accuracy.
+However, our proposed multi-stage framework offers a
+lightweight and effective alternative, achieving competitive
+accuracy and significantly higher entailment scores using
+only pretrained models.
+C. Ablation and Reasoning Analysis
+To evaluate the contribution of each component in
+our multi-stage legal reasoning pipeline, we conduct
+a detailed ablation study on the Child Abuse Legal Support Dataset (CALSD). This analysis assesses
+how various stages—ARR prompting, critique-debateadjudication, judge explanation, summary integration,
+and chain-of-verification—individually and jointly affect
+the system’s performance in both legal answer selection
+(QA accuracy) and the quality of explanation (NLI
+entailment). As shown in Figure 7, the combination of
+chain-of-verification with ARR reasoning (Rˆ
+verified + R)
+significantly outperforms other configurations in terms of
+NLI score.
+Each stage in our pipeline targets a specific limitation
+of single-pass generation. ARR prompting ensures structured coverage of key legal dimensions; critique-debateadjudication introduces deliberative reasoning; the judge
+module distills these into a coherent legal judgment; summarization compresses diverse justifications; and chain-ofverification ensures alignment with facts and legal norms.
+In legal aid contexts—particularly those involving child
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 12
+TABLE VI: Impact of Reasoning Stages on NLI Entailment Score and QA Accuracy
+# Configuration Description NLI Score Accuracy (%)
+1 ARR Only (R) Initial reasoning output using ARR prompting over retrieved legal
+context; no critique or verification
+0.7534 60.68
+2 Rˆ
+final Final reasoning after critique-debate-adjudication stage 0.6059 93.58
+3 Rˆ
+final + R Concatenation of CDA reasoning and original ARR output 0.6786 -
+4 Jˆ Standalone judgment output from the judge module following adjudication
+0.5814 -
+5 Jˆ + R Judge explanation augmented with ARR reasoning 0.6485 -
+6 Summary (Jˆ + Rˆ
+final) Combined summary of judge and critique-debate reasoning without
+verification step
+0.5768 -
+7 Jˆ + Summary Judge explanation followed by a summary of final debate reasoning 0.5649 -
+8 Rˆ
+verified Output of the chain-of-verification module 0.6471 93.73
+9 Rˆ
+final + Rˆ
+verified Fusion of debate-driven and verified reasoning outputs 0.6823 -
+10 Rˆ
+final + Rˆ
+verified + R Integration of critique-debate, verification, and ARR reasoning outputs
+0.7316 -
+11 Rˆ
+verified + R Final ensemble: chain-of-verification combined with ARR reasoning 0.7984 93.80
+abuse—such layered reasoning is essential for producing
+both correct and explainable decisions.
+Table VI reports performance metrics for multiple stage
+configurations. We use classification accuracy to measure
+decision correctness and NLI entailment scores (computed
+between generated rationales and gold explanations) to
+measure explanation quality.
+Fig. 7: NLI score comparison across different reasoning configurations. The final ensemble using chain-ofverification combined with ARR reasoning (Rˆ
+verified + R)
+yields the highest score.
+Key Observations:
+• ARR Prompting Drives Fluent Legal Justifications:
+As shown in Row 1, ARR prompting achieves the
+highest NLI score (0.7534) among individual stages,
+reflecting strong alignment with gold explanations.
+However, its low accuracy (60.68%) suggests that
+fluent reasoning alone may be insufficient for reliably
+selecting correct answers.
+• Critique-Debate Significantly Improves Accuracy:
+The structured debate-adjudication stage (Row 2)
+increases answer accuracy to 93.58%, showing the
+value of deliberative reasoning. Yet, the lower NLI
+score (0.6059) indicates a tradeoff in coherence or textual alignment. However, merging the CDA reasoning
+with ARR reasoning significantly improved NLI score
+(0.6786).
+• Judgement and Summary Modules Offer Modest
+Gains: Configurations involving the judgement only
+from adjudicate (without the final reasoning from
+CDA) have not shown any significant contribution
+to explanation quality (Rows 4–7).
+• Verification Module Balances Fluency and Factuality:
+The chain-of-verification stage (Row 8) yields better
+performance than most other stages in both metrics,
+offering a balance of correctness (93.73%) and coherent justifications (0.6471 NLI). When paired with
+debate or ARR reasoning (Rows 9–11), performance
+improves further.
+• Final Ensemble Achieves Best Overall Performance:
+The ensemble of ARR reasoning and chain-ofverification (Row 11) delivers the best results in both
+dimensions—NLI score of 0.7984 and QA accuracy
+of 93.80%. This highlights the complementary nature
+of structured prompting (ARR) and post-hoc factual
+validation (verification).
+In summary, our ablation study reveals that no single
+reasoning stage is sufficient to optimize both factual
+correctness and explanatory quality. ARR excels in generating fluent legal rationales, while critique-debate and
+verification modules are key to improving decision accuracy and factual consistency. Their integration enables a
+balanced system that aligns with expert legal reasoning,
+making it more trustworthy and transparent—particularly
+critical in the context of delivering AI-assisted support for
+child abuse survivors.
+D. Legal Coverage Analysis
+To assess the legal grounding and statutory breadth
+of our multi-stage legal reasoning pipeline, we analyze
+the frequency of cited legal provisions across the three
+core reasoning stages: ARR, CDA+CoV, and the Final
+Ensemble. Table VII summarizes the number of times
+key statutory sections were referenced in model-generated
+answers.
+We focus on high-impact sections from the Protection
+of Children from Sexual Offences (POCSO) Act, the
+Indian Penal Code (IPC), and relevant provisions from the
+Juvenile Justice (JJ) Act. These provisions are central to
+legal proceedings involving child sexual abuse, and their
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 13
+TABLE VII: Frequency of Legal Section Mentions Across
+Reasoning Stages. We report how often specific statutory
+provisions are cited in model outputs. Sections 3–22 refer
+to the POCSO Act; others belong to the IPC or Juvenile
+Justice (JJ) Act.
+Legal Section / Act R Rˆ
+final
++
+Rˆ
+verified
+Final
+Ensemble
+POCSO Act
+Section 3 – Penetrative Sexual
+Assault
+212 198 234
+Section 4 – Punishment for
+PSA
+188 179 209
+Section 5 – Aggravated PSA 143 151 169
+Section 6 – Punishment for
+Aggr. PSA
+126 134 158
+Section 7 – Sexual Assault 197 189 220
+Section 8 – Punishment for SA 165 172 196
+Section 9 – Aggravated SA 122 118 141
+Section 10 – Punishment for
+Aggr. SA
+109 104 129
+Section 11 – Sexual Harassment (Child)
+145 139 163
+Section 12 – Punishment for
+SH
+131 126 147
+Section 19 – Mandatory Reporting
+118 122 138
+Section 21 – Failure to Report 104 97 120
+Section 22 – False Complaints 88 91 103
+Indian Penal Code (IPC)
+IPC 375 – Rape 199 188 221
+IPC 376 – Punishment for
+Rape
+171 165 193
+IPC 354 (A–D) – Assault /
+Harassment
+183 177 205
+IPC 509 – Gesture / Insult 109 115 128
+IPC 323 – Causing Hurt 97 102 113
+IPC 506 – Criminal Intimidation
+93 88 106
+Juvenile Justice (JJ) Act
+Sections 2(14), 27, 29, 30 127 134 148
+Total Mentions 3007 2958 3469
+frequency reflects how thoroughly each stage incorporates
+codified legal reasoning into its outputs.
+We observe that the Final Ensemble stage consistently
+demonstrates broader legal coverage, with a total of 3469
+statute mentions, compared to 3007 and 2958 mentions in
+ARR and CDA+CoV stages, respectively. This indicates
+that as reasoning evolves through critique and verification,
+the outputs become more jurisprudentially grounded.
+Notably, critical sections such as Section 3 (Penetrative
+Sexual Assault), Section 7 (Sexual Assault), and IPC 375
+(Rape) show increased mentions in the final ensemble,
+suggesting that the system prioritizes legally relevant
+concepts more effectively at deeper reasoning stages.
+Similarly, there is an uptick in references to procedural
+mandates (e.g., Section 19: Mandatory Reporting) and
+penal consequences (e.g., Section 21: Failure to Report).
+This quantitative evaluation supports our broader
+claim: that structured multi-stage prompting not only
+improves coherence and interpretability but also enhances
+statutory fidelity—an essential requirement for deployment in sensitive legal domains like child protection.
+E. Computational Trade-Offs and Inference Efficiency
+To assess the practical viability of our multi-stage
+legal reasoning framework, we report average token usage,
+inference time, and normalized compute cost (seconds per
+token) across reasoning stages in Table VIII.
+TABLE VIII: Inference Efficiency Across Reasoning
+Stages: We report average tokens used per sample, inference time, and normalized compute cost (seconds per
+token) for each stage of our legal QA pipeline.
+Reasoning Stage Avg Tokens
+per sample
+Avg Time
+(sec)
+Time/Token
+(sec)
+R ≈ 100 13 0.13
+Rˆ
+final + Rˆ
+verified ≈ 150 32 0.21
+Final Ensemble
+(Rˆ
+verified + R)
+≈ 200 40 0.20
+As expected, later stages incur greater computational
+cost, with token usage and inference time increasing
+through the pipeline. However, the time-per-token metric
+remains relatively stable—rising only marginally from 0.13
+to 0.20 seconds—indicating that higher interpretability
+and legal rigor can be achieved with manageable overhead.
+VII. Qualitative Inference Analysis
+To demonstrate the interpretability, legal fidelity, and
+ethical rigor of our multi-stage reasoning framework,
+we present a series of representative case studies from
+our dataset involving complex issues such as custodial
+abuse, bail petitions, and imprisonment under POCSO
+and related Acts. In each example, the legal question
+remains consistent across all reasoning stages, enabling a
+controlled comparison of how each component contributes
+to the depth, relevance, and statutory alignment of the
+generated legal explanations.
+A. Case Study 1: Custodial Abuse and Forced Marriage
+Passage: “In the case of ABC @ PQR vs The State Of
+Karnataka, the petitioner’s criminal petition seeks bail.
+The petitioner is accused of kidnapping a 17-year-old
+girl named ’X’ and subjecting her to child abuse, serious
+sexual offenses as per IPC and POCSO Act. The allegation
+states that he took the victim from her lawful custody,
+cohabited with her forcibly after marrying her under
+duress. Her statements and medical reports corroborate
+the rape claims, leading the court to dismiss the bail
+petition.”
+Question: “What are the potential legal remedies or
+actions available to the victim girl ’X’ based on the
+allegations against ABC @ PQR and the court’s findings
+regarding the case?”
+Options:
+A. The victim should be sent back to her parents without
+any further legal action.
+B. The victim can seek protection under the POCSO
+Act and the Child Marriage Act, and the perpetrator
+may face criminal charges.
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 14
+TABLE IX: Qualitative Evolution of Reasoning Across Stages for a Custodial Abuse QA Example
+Stage Generated Legal Reasoning
+ARR Reasoning
+(R)
+The retrieved context emphasizes the need for immediate legal action when a minor is involved and the offense
+is serious. Specifically, sections 18 and 26 of the retrieved context detail that if a child is alleged to have
+committed a serious offense, the authorities must take appropriate steps, including conducting an investigation
+and providing legal aid and counseling to the child victim. Given that the allegations involve assault and the
+victim is a minor, these provisions clearly indicate that immediate legal action is required.
+Chain-ofVerification with
+Critique-DebateAdjudication
+(Rˆverified +
+Rˆfinal)
+Option B aligns with both the Medical Termination of Pregnancy Act, 1971 and the Juvenile Justice (Care and
+Protection of Children) Act, 2015. The retrieved context supports the requirement of a medical examination to
+confirm any health risks due to pregnancy and mandates counselling to inform the child about lawful options
+available. Legal and medical consent from the guardian is necessary. Based on the allegations, the victim
+girl ’X’ is entitled to legal protection under both the Protection of Children from Sexual Offences (POCSO)
+Act and the Child Marriage Act. These legislations specifically address issues of child abuse and impose legal
+consequences on the accused. The court’s decision to dismiss bail reflects the gravity of the charges and indicates
+the commencement of formal legal proceedings against the perpetrator.”
+Final Ensemble
+(Rˆ
+verified + R)
+The response is supported by both the Medical Termination of Pregnancy Act, 1971 and the Juvenile Justice
+(Care and Protection of Children) Act, 2015. The retrieved context highlights the necessity of a medical
+examination to assess potential health risks due to pregnancy in a minor, along with the requirement for
+counselling to inform the child about lawful options. Additionally, both medical and legal consent from the
+guardian are essential to proceed. Further support comes from Sections 18 and 26 of the Juvenile Justice Act,
+2015, which emphasize the urgency of legal action in cases involving serious offenses against minors. These
+provisions mandate that authorities conduct timely investigations and ensure the child victim receives legal aid
+and counselling. Taken together, these legal mandates underline the importance of immediate medical, legal,
+and protective measures in such cases.
+TABLE X: Qualitative Evolution of Reasoning Across Stages for a Bail-Granted QA Example
+Stage Generated Legal Reasoning
+ARR Reasoning
+(R)
+The context clearly states that when a claim of juvenility is raised, the court must make an inquiry to determine
+the age of the person as mandated under Section 94 of the Juvenile Justice (Care and Protection of Children)
+Act, 2015. Furthermore, it specifies that if a child is alleged to have committed a serious offense, the court
+or board shall proceed with the investigation as if the case has been forwarded to them under the Code of
+Criminal Procedure, in line with Section 33 of the POCSO Act, 2012, which outlines the procedure for trial of
+offences under the Act. Since the victim is a minor and the offenses are described as serious, the authorities are
+mandated to take immediate legal action to investigate the allegations, as per Section 19 of the POCSO Act,
+which requires mandatory reporting and registration of FIR for such cases.”
+Chain-ofVerification with
+Critique-DebateAdjudication
+(Rˆ
+verified + Rˆ
+final)
+”Given the serious nature of the allegations and the conditions placed by the court, the most reasonable
+legal remedy for ABC is to comply with the conditions set forth in the bail grant, while also securing legal
+representation to address the charges effectively. The context explicitly mentions the importance of maintaining
+confidentiality when dealing with victims of abuse, which is a crucial aspect in ensuring the victim’s trust and
+cooperation, as mandated under Section 33(7) of the POCSO Act, 2012. Additionally, the court must conduct an
+inquiry to determine age when a claim of juvenility is raised, as provided under Section 94 of the Juvenile Justice
+Act, 2015. Moreover, the authorities are obligated to take immediate legal action upon receiving information
+about a serious offence against a minor, in accordance with Section 19 of the POCSO Act, 2012.
+Final Ensemble
+(Rˆ
+verified + R)
+The context clearly states that when a claim of juvenility is raised, the court must make an inquiry to determine
+the age of the person, as mandated under Section 94 of the Juvenile Justice (Care and Protection of Children)
+Act, 2015. Furthermore, it specifies that if a child is alleged to have committed a serious offense, the court
+or board shall proceed with the investigation as if the case has been forwarded to them under the Code of
+Criminal Procedure, in line with Section 33 of the POCSO Act, 2012, which outlines the procedure for trial of
+offences under the Act. Since the victim is a minor and the offenses are described as serious, the authorities are
+mandated to take immediate legal action, as per Section 19 of the POCSO Act, 2012, which requires mandatory
+reporting and FIR registration. Given that anticipatory bail has been granted to ABC under Section 438 of
+the Code of Criminal Procedure, 1973, the most reasonable legal remedy is for her to strictly comply with all
+conditions imposed by the court—such as cooperating in the investigation and not influencing witnesses—while
+also securing competent legal representation to address the charges effectively.”
+C. The victim should file a civil lawsuit against her
+parents for negligence.
+D. The victim is required to remain silent and not pursue
+any legal actions.
+The correct answer is (B) — legal protections and penal
+consequences are mandated under multiple child protection statutes. Table IX illustrates the evolution of legal
+reasoning across stages for this custodial abuse scenario,
+highlighting how the proposed framework progressively
+integrates statutory mandates, ethical considerations, and
+jurisprudential alignment in its explanations.
+B. Case Study 2: Bail Granted in a POCSO-Related Case
+Passage: “In the case of ’ABC’ vs State, the applicant
+ABC is seeking anticipatory bail in relation to FIR
+No.288/2022 involving serious charges including sections
+of the POCSO Act. The complaint details a grave situation
+where the applicant’s son allegedly raped a minor girl,
+leading to complications that resulted in an abortion. The
+applicant argues that she has been falsely implicated and
+has shown willingness to cooperate with the investigation.
+The court has ordered conditions for her bail, emphasizing
+her responsibilities while on bail and the importance of
+not intimidating witnesses.”
+Question: “Given that ABC has been accused in a
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 15
+TABLE XI: Qualitative Evolution of Reasoning Across Stages for a Rigorous Imprisonment QA Example
+Stage Generated Legal Reasoning
+ARR Reasoning
+(R)
+The context emphasizes that when a minor is involved in alleged offenses, especially serious ones, the authorities
+are required to take immediate legal action to investigate the allegations. This is evident from several sections in
+the context, such as section 18(1) which states that if a child has committed a serious offense, the board shall take
+appropriate action, and section 26(2(ii) which mentions that action should be taken against the perpetrator of
+abuse. Therefore, the correct option is ’Authorities must take immediate legal action to investigate the allegations
+as the victim is a minor and the offenses fall under serious criminal categories.
+Chain-ofVerification with
+Critique-DebateAdjudication
+(Rˆ
+verified + Rˆ
+final)
+The model’s chosen option (B) states that ”Setting a precedent could open the door to stricter enforcement of
+protective measures for minors in future cases, ensuring consideration for emotional and physical safety alongside
+legal definitions.” This reasoning is supported by the retrieved context, which highlights the importance of
+balancing the need to protect vulnerable minors with the need to ensure a fair trial process. The passage further
+discusses the serious felony committed against an 8-year-old minor and confirms that the accused has been found
+guilty under the POCSO Act, 2012, which provides specific legal safeguards for the protection and rehabilitation
+of child victims. Under Section 33 of the POCSO Act, special procedures are established to ensure the child’s
+safety during the trial. Section 19 mandates immediate reporting of sexual offences against children and the
+registration of FIR. Section 37 ensures in-camera trial proceedings to protect the child’s privacy. Additionally,
+Section 94 of the Juvenile Justice (Care and Protection of Children) Act, 2015 enables proper age determination
+when questions of juvenility arise, reinforcing the legal system’s child-sensitive approach.
+Final Ensemble
+(Rˆ
+verified + R)
+The passage discusses the serious felony committed against an 8-year-old minor and confirms that the accused
+has been found guilty under the POCSO Act, 2012, which provides specific measures for the protection and
+rehabilitation of child victims, ensuring their rights are upheld during and after legal proceedings. The context
+emphasizes that when a minor is involved in alleged serious offenses, the authorities are legally obligated to take
+immediate action to investigate the allegations. This obligation is reinforced by Section 19 of the POCSO Act,
+which mandates prompt reporting of such offenses. Section 18(1) of the Juvenile Justice Act, 2015 states that if
+a child has committed a serious offense, the Juvenile Justice Board shall take appropriate action. Additionally,
+Section 26(2)(ii) of the same Act requires action against the perpetrator of abuse. Section 33 of the POCSO
+Act ensures a child-friendly trial process to protect the child victim during proceedings, and Section 37 of the
+POCSO Act mandates in-camera trials to maintain the confidentiality and dignity of the minor involved.
+serious case under the POCSO Act involving the alleged
+rape of a minor and the subsequent abortion, what legal
+measures or remedies can she pursue to challenge the
+accusations while ensuring compliance with the court’s
+directives for her anticipatory bail?”
+Options:
+A. ABC can file a complaint against the complainant for
+defamation and seek damages.
+B. ABC can request the court to dismiss the charges
+against her without a trial.
+C. ABC should prepare to comply with the bail conditions and seek legal representation to navigate the
+trial process effectively.
+D. ABC can ignore the court’s conditions as they are
+not binding.
+The correct answer is (C) — legal compliance with bail
+terms and effective representation are essential when facing serious allegations under special statutes like POCSO.
+Table X showcases the progression of legal reasoning
+for this anticipatory bail scenario, highlighting how the
+framework integrates statutory interpretation and procedural compliance through successive refinement stages.
+C. Case Study 3: Rigorous Imprisonment in a Heinous
+Offense
+Passage: ”XYZ vs The State Of Maharashtra And
+Anr on 2 September, 2021. By this application under
+Section 389 of the Code of Criminal Procedure, 1973
+the Applicant seeks suspension of substantive sentence
+imposed by judgment dated 04/03/2021 passed by learned
+District Judge-2 and Additional Sessions Judge, Thane in
+Special (POCSO) Case No.194 of 2018 and enlargement
+on bail. Charge against the Applicant is that he had
+committed rape / penetrative sexual assault on a minor
+girl aged about 8 years of age. The evidence of the victim
+prima facie indicates that the Applicant was involved in
+commission of the said crime. The medical evidence also
+suggests that there was evidence of penetrative vaginal
+intercourse. Thus, the material on record indicates that
+the Applicant, who is over 50 years of age has sexually
+abused the child who was barely 8 years of age as on the
+date of incident. The offence is not only grave but heinous
+in nature. There is prima facie material to believe that
+the Applicant was involved in commission of the crime.
+Considering the nature of accusations, gravity of offence
+and severity of punishment, in my considered view this is
+not a fit case for suspension of sentence and hence, the
+application is dismissed.”
+Question: “In the context of the case XYZ vs The State
+of Maharashtra, considering the heinous nature of the
+crime against a minor, what legal action or remedy is
+available for the victim under the Protection of Children
+from Sexual Offences (POCSO) Act?”
+A. The victim should receive a governmental compensation and the case be closed due to lack of evidence.
+B. The victim is entitled to the protection and rehabilitation measures as provided under POCSO Act and
+ensure that the perpetrator serves his sentence.
+C. The victim’s family can file a civil suit against the
+state for emotional distress.
+D. No action is required as the accused is already in
+prison.
+Correct Answer: B. The victim is entitled to the
+protection and rehabilitation measures as provided under
+POCSO Act and ensure that the perpetrator serves his
+sentence. Table XI presents the stepwise refinement of
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 16
+legal reasoning in the context of a heinous sexual offense,
+highlighting the consistent invocation of POCSO and Juvenile Justice provisions to ensure the victim’s protection,
+rehabilitation, and the perpetrator’s sentencing integrity.
+D. Expert Evaluation of Generated Legal Reasoning
+To assess the quality of the generated legal reasoning,
+three independent legal experts were asked to rate the
+outputs of our framework across five dimensions: Legal
+Correctness, Clarity, Usefulness, Bias or Fairness, and
+Overall Quality of the Reasoning. Each parameter was
+rated on a Likert scale from 1 to 5, where 1 indicates the
+lowest and 5 indicates the highest level of satisfaction.
+The results for three separate case studies are presented
+in Figure 8. Each chart represents the ratings given by the
+three experts, enabling a comparative analysis of their
+assessments.
+Overall, the ratings show consistently high scores for
+Usefulness, with atleast two experts assigning a rating
+of 5 across all case studies. Ratings for Legal Correctness and Clarity remain strong, though there is minor
+variation across experts. The Bias or Fairness dimension
+reflects the most variability, particularly for Expert 2,
+who consistently provided lower scores in this category.
+Despite these discrepancies, the Overall Quality of the
+Reasoning was generally rated favorably, with Experts 2
+and 3 assigning the maximum score of 5 in two cases.
+VIII. Conclusion
+We present a modular, interpretable, and verifiable
+legal reasoning framework tailored to the complex demands of child sexual abuse (CSA) legal support. Our
+multi-stage pipeline—combining Argument-Retain-Refine
+(ARR) prompting, structured critique and adjudication
+(CDA), and chain-of-verification (CoV)—balances legal
+fluency with factual rigor. The final VERA ensemble
+synthesizes diverse reasoning paths into a coherent and
+statutorily grounded output, mitigating errors while enhancing transparency. Empirical results on the CALSD
+demonstrate that our framework significantly improves
+QA accuracy, statutory coverage, and reasoning clarity.
+We further show that these gains come with modest
+computational overhead, making the system feasible for
+practical deployment. Case study analysis and expert legal
+evaluation affirm the reliability, clarity, and fairness of our
+outputs—supporting the system’s potential for responsible
+use in legal assistance and judicial workflows.
+Looking ahead, this paradigm can be extended to other
+sensitive legal domains (e.g., domestic violence, juvenile
+justice), incorporate real-time human feedback, and explore formal methods to ensure interpretive consistency
+and fairness across reasoning stages.
+Conflict of Interest
+The authors declare that they have no competing or
+any conflict of interest regarding the publication of this
+paper.
+(a) Case 1
+(b) Case 2
+(c) Case 3
+Fig. 8: Expert evaluation of legal reasoning quality across
+three case studies using five parameters.
+Funding Sources
+This research did not receive any specific grant from
+funding agencies in the public, commercial, or not-forprofit sectors.
+References
+[1] N. C. R. Bureau, “Crime in india 2022,”
+Online Report, 2022. [Online]. Available: https:
+//www.ncrb.gov.in/uploads/nationalcrimerecordsbureau/
+custom/1701607577CrimeinIndia2022Book1.pdf
+[2] N. H. R. Commission, “Pocso,” Online Report, 2020.
+[Online]. Available: https://nhrc.nic.in/sites/default/files/10_
+PROTECTION%20OF%20CHILDREN%20-%20SEXUAL%
+20OFFENCES.pdf
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 17
+[3] M. O. LAW and JUSTICE, “The juvenile justice (care and
+protection of children) act, 2015,” Online Report, 2016. [Online].
+Available: https://cara.wcd.gov.in/pdf/jj%20act%202015.pdf
+[4] I. Chalkidis, M. Fergadiotis, P. Malakasiotis, N. Aletras, and
+I. Androutsopoulos, “Legal-bert: The muppets straight out of
+law school,” arXiv preprint arXiv:2010.02559, 2020.
+[5] A. Louis, G. van Dijck, and G. Spanakis, “Interpretable longform legal question answering with retrieval-augmented large
+language models,” in Proceedings of the AAAI Conference on
+Artificial Intelligence, vol. 38, no. 20, 2024, pp. 22 266–22 275.
+[6] C. Zheng, X. Guo, K. Talamadupula, M. Li, and X. Zhang,
+“When does pretraining help? assessing self-supervised learning
+for law and the casehold dataset of 53,000+ legal holdings,” in
+Proceedings of the 2021 Conference on Empirical Methods in
+Natural Language Processing, 2021, pp. 8770–8780.
+[7] I. Chalkidis, I. Androutsopoulos, and N. Aletras, “Neural legal
+judgment prediction in english,” in Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics,
+2019, pp. 4317–4323.
+[8] X. Wang, D. Hendrycks, A. Lee, T. Darrell, P. Liang, D. Song,
+and J. Zou, “Legalbench: A collaboratively built benchmark
+for measuring legal reasoning in large language models,” arXiv
+preprint arXiv:2308.11462, 2023.
+[9] J. Linders and J. M. Tomczak, “Knowledge graph‑extended
+retrieval augmented generation for question answering,” ArXiv,
+April 2025, https://arxiv.org/abs/2504.08893.
+[10] Y. Yin and G. Carenini, “Arr: Question answering with large
+language models via analyzing, retrieving, and reasoning,”
+2025. [Online]. Available: https://arxiv.org/abs/2502.04689
+[11] G. Irving, P. Christiano, D. Amodei et al., “Ai safety
+via debate,” arXiv preprint arXiv:1805.00899, 2018. [Online].
+Available: https://arxiv.org/abs/1805.00899
+[12] S. Dhuliawala, M. Komeili, J. Xu, R. Raileanu, X. Li,
+A. Celikyilmaz, and J. Weston, “Chain-of-verification reduces
+hallucination in large language models,” 2023. [Online].
+Available: https://arxiv.org/abs/2309.11495
+[13] I. Chalkidis, M. Fergadiotis, and I. Androutsopoulos,
+“Multieurlex–a multi-lingual and multi-label legal document
+classification dataset for zero-shot cross-lingual transfer,” arXiv
+preprint arXiv:2109.00904, 2021.
+[14] J. Ge, Y. Huang, X. Shen, C. Li, and W. Hu, “Learning finegrained fact-article correspondence in legal cases,” IEEE/ACM
+Transactions on Audio, Speech, and Language Processing,
+vol. 29, pp. 3694–3706, 2021.
+[15] V. Mavi, A. Saparov, and C. Zhao, “Retrieval-augmented
+chain-of-thought in semi-structured domains,” arXiv preprint
+arXiv:2310.14435, 2023.
+[16] A. Abdallah, B. Piryani, and A. Jatowt, “Exploring the state
+of the art in legal qa systems,” Journal of Big Data, vol. 10,
+no. 1, p. 127, 2023.
+[17] Y. Yin, L. Li, S. Xie, X. Tao, and J. Zhang, “Enhanced question
+understanding for multi-type legal question answering,” CCF
+Transactions on Pervasive Computing and Interaction, vol. 7,
+no. 1, pp. 15–29, 2025.
+[18] P. Bhattacharya, S. Paul, K. Ghosh, S. Ghosh, and A. Wyner,
+“Identification of rhetorical roles of sentences in indian legal
+judgments,” in Legal knowledge and information systems. IOS
+Press, 2019, pp. 3–12.
+[19] P. M. Kien, H.-T. Nguyen, N. X. Bach, V. Tran, M. Le Nguyen,
+and T. M. Phuong, “Answering legal questions by learning
+neural attentive text representation,” in Proceedings of the 28th
+International Conference on Computational Linguistics, 2020,
+pp. 988–998.
+[20] C. Xiao, X. Hu, Z. Liu, C. Tu, and M. Sun, “Lawformer: A
+pre-trained language model for chinese legal long documents,”
+AI Open, vol. 2, pp. 79–84, 2021.
+[21] V. Parikh, V. Mathur, P. Mehta, N. Mittal, and P. Majumder,
+“Lawsum: A weakly supervised approach for indian legal document summarization,” arXiv preprint arXiv:2110.01188, 2021.
+[22] S. Paul, P. Goyal, and S. Ghosh, “Lesicin: A heterogeneous
+graph-based approach for automatic legal statute identification
+from indian legal documents,” in Proceedings of the AAAI
+conference on artificial intelligence, vol. 36, no. 10, 2022, pp.
+11 139–11 146.
+[23] H.-T. Nguyen, M.-K. Phi, X.-B. Ngo, V. Tran, L.-M. Nguyen,
+and M.-P. Tu, “Attentive deep neural networks for legal document retrieval,” Artificial Intelligence and Law, vol. 32, no. 1,
+pp. 57–86, 2024.
+[24] M. Niyogi and A. Bhattacharya, “Paramanu-ayn: Pretrain
+from scratch or continual pretraining of llms for legal domain
+adaptation?” arXiv preprint arXiv:2403.13681, 2024.
+[25] A. Joshi, S. Paul, A. Sharma, P. Goyal, S. Ghosh, and A. Modi,
+“Il-tur: Benchmark for indian legal text understanding and
+reasoning,” arXiv preprint arXiv:2407.05399, 2024.
+[26] A. Parrish, A. Chen, N. Nangia, V. Padmakumar, J. Phang,
+J. Thompson, P. M. Htut, and S. R. Bowman, “Bbq: A handbuilt bias benchmark for question answering,” arXiv preprint
+arXiv:2110.08193, 2021.
+[27] B. Coulthard and B. J. Taylor, “Natural language processing
+to identify case factors in child protection court proceedings,”
+Methodological Innovations, vol. 15, no. 3, pp. 222–235, 2022.
+[28] W. Huang, Y. Wang, and C. Chen, “Privacy evaluation benchmarks for nlp models,” arXiv preprint arXiv:2409.15868, 2024.
+[29] A. Gupta, P. Meng, E. Yurtseven, S. O’Brien, and K. Zhu,
+“Aavenue: Detecting llm biases on nlu tasks in aave via a novel
+benchmark,” arXiv preprint arXiv:2408.14845, 2024.
+[30] P. Rath, H. Shrawgi, P. Agrawal, and S. Dandapat, “Llm safety
+for children,” arXiv preprint arXiv:2502.12552, 2025.
+[31] Indian Kanoon, “Indian kanoon legal database,” https://
+indiankanoon.org/, accessed: 2025-06-15.
+[32] Supreme Court of India, “Official website of the supreme court
+of india,” https://main.sci.gov.in/, accessed: 2025-06-15.
+[33] Allahabad High Court, “Official website of allahabad high court
+and other district courts,” http://www.allahabadhighcourt.in/,
+accessed: 2025-06-15.
+[34] National Commission for Protection of Child Rights,
+“Bare acts related to children,” https://www.ncpcr.gov.in/
+bare-acts-related-children, accessed: 2025-06-15.
+[35] M. O. LABOUR and EMPLOYMENT, “The child labour
+(prohibition and regulation) act, 1986,” Online Report, 1986.
+[Online]. Available: https://labour.gov.in/sites/default/files/
+act_2.pdf
+[36] M. O. LAW and JUSTICE, “The commissions for
+protection of child rights act, 2005,” Online Report,
+2006. [Online]. Available: https://missionvatsalya.wcd.gov.in/
+public/pdf/children-related-law/The%20Commissions%20for%
+20Protection%20of%20Child%20Rights%20Act,%202005.pdf
+[37] V. Adlakha, P. BehnamGhader, X. H. Lu, N. Meade,
+and S. Reddy, “Evaluating correctness and faithfulness of
+instruction-following models for question answering,” Transactions of the Association for Computational Linguistics, vol. 12,
+pp. 681–699, 2024.
+[38] D. Hendrycks, C. Burns, A. Chen, and S. Ball, “Cuad: an expertannotated nlp dataset for legal contract review,” arXiv preprint
+arXiv:2103.06268, 2021.
+[39] P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin,
+N. Goyal, I. Kulikov, M. Ghazvininejad, L. Zettlemoyer, and
+S. Riedel, “Retrieval-augmented generation for knowledgeintensive nlp tasks,” in Advances in Neural Information
+Processing Systems (NeurIPS), 2020. [Online]. Available:
+https://arxiv.org/abs/2005.11401
+[40] K. Song, X. Tan, T. Qin, J. Lu, and T.-Y. Liu, “Mpnet: Masked
+and permuted pre-training for language understanding,” Advances in neural information processing systems, vol. 33, pp.
+16 857–16 867, 2020.
+[41] M. Douze, A. Guzhva, C. Deng, J. Johnson, G. Szilvasy, P.-
+E. Mazaré, M. Lomeli, L. Hosseini, and H. Jégou, “The faiss
+library,” 2024.
+[42] J. Bai, S. Bai, Y. Chu, Z. Cui, K. Dang, X. Deng, Y. Fan, W. Ge,
+Y. Han, F. Huang, B. Hui, L. Ji, M. Li, J. Lin, R. Lin, D. Liu,
+G. Liu, C. Lu, K. Lu, J. Ma, R. Men, X. Ren, X. Ren, C. Tan,
+S. Tan, J. Tu, P. Wang, S. Wang, W. Wang, S. Wu, B. Xu, J. Xu,
+A. Yang, H. Yang, J. Yang, S. Yang, Y. Yao, B. Yu, H. Yuan,
+Z. Yuan, J. Zhang, X. Zhang, Y. Zhang, Z. Zhang, C. Zhou,
+J. Zhou, X. Zhou, and T. Zhu, “Qwen technical report,” arXiv
+preprint arXiv:2309.16609, 2023.
+[43] M. AI, “Introducing llama 3.1: Our most capable models
+to date,” https://ai.meta.com/blog/meta-llama-3-1/, 2024, accessed: 2025-06-11.
+[44] Y. Chen and S. Eger, “Menli: Robust evaluation metrics from
+natural language inference,” Transactions of the Association
+for Computational Linguistics, vol. 11, pp. 804–825, 2023.
+[Online]. Available: https://aclanthology.org/2023.tacl-1.47/
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 18
+[45] N. Reimers and I. Gurevych, “Sentence-bert: Sentence
+embeddings using siamese bert-networks,” in Proceedings of
+the 2019 Conference on Empirical Methods in Natural Language
+Processing. Association for Computational Linguistics, 11
+2019. [Online]. Available: http://arxiv.org/abs/1908.10084

@@ -1,6 +1,5 @@
-<<<<<<< HEAD
 # Multilingual-Legal-laws
-Multilingual-Legal-laws
+
 =======
 # VERA: QA Child Legal Bot
 

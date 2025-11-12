@@ -205,12 +205,25 @@ We will add:
 
 2. **Section VIII**: Discussion of limitations and the importance of human validation for deployment
 
+**Alignment with Paper Metrics:**
+
+The stakeholder evaluation protocol is designed to **validate and complement** the automated metrics proposed in the paper:
+
+- **Legal Correctness** (stakeholder dimension) ↔ **Accuracy** (paper metric): Stakeholder ratings validate that high-accuracy predictions are indeed legally correct
+- **Statutory Grounding** (stakeholder dimension) ↔ **NLI Score** (paper metric): Both measure reasoning quality; stakeholder validation confirms NLI scores reflect actual legal grounding
+- **Usefulness for Layperson** (stakeholder dimension): Additional dimension not captured by automated metrics, critical for deployment
+- **Harm Avoidance** (stakeholder dimension): Safety dimension essential for legal applications, complements accuracy
+- **Faithfulness** (stakeholder dimension) ↔ **Hallucination Detection**: Validates that explanations don't contain fabricated legal rules
+
+**Correlation Analysis**: We will report correlation coefficients between stakeholder ratings and automated metrics (e.g., legal_correctness vs. accuracy, statutory_grounding vs. NLI), demonstrating alignment while highlighting dimensions unique to stakeholder evaluation.
+
 **Justification for Approach:**
 
 1. **Methodological Rigor**: Double-blind, independent ratings with agreement metrics ensure reliability
 2. **Practical Relevance**: Engaging actual stakeholders ensures evaluation reflects real-world needs
 3. **Comprehensive Coverage**: Five dimensions capture both correctness and utility
 4. **Actionable Insights**: Qualitative analysis identifies specific improvement areas
+5. **Validation of Automated Metrics**: Stakeholder evaluation validates that automated metrics (accuracy, NLI) reflect real-world quality
 
 ---
 
@@ -495,11 +508,39 @@ We will add:
 ### Comment 6.1: Explainability vs Plausibility
 
 **Reviewer's Concern:**
+> "Please clarify what is meant by 'lack explainable justifications' and whether you can substantiate this claim with references or comparative evidence."
+> 
 > "Chain of thought/verification does NOT constitute explainability. It merely reflects plausibility. Who verifies that explanations are correct?"
 
 **Our Response:**
 
-We acknowledge this important distinction and thank the reviewer for the clarification. We will revise our terminology and add explicit discussion of this limitation.
+We acknowledge these important concerns. We will clarify the "lack explainable justifications" claim with comparative evidence and revise our terminology regarding explainability vs. plausibility.
+
+**Clarifying "Lack Explainable Justifications" Claim:**
+
+1. **Definition**: By "lack explainable justifications," we mean that existing legal QA systems typically provide only answers without detailed reasoning traces that:
+   - Trace the answer to specific legal provisions
+   - Explain why certain options are incorrect
+   - Show the logical steps connecting facts to legal conclusions
+   - Identify which statutes/sections are applicable
+
+2. **Comparative Evidence**:
+   - **CaseHOLD** (Zhong et al., 2020): Predicts case outcomes but doesn't provide detailed justifications linking predictions to legal reasoning
+   - **LegalBench** (Guha et al., 2023): Evaluates legal reasoning tasks but most systems don't generate step-by-step explanations
+   - **General Legal QA Systems**: Most focus on answer accuracy rather than explanation quality (e.g., RAG-based systems retrieve context but don't provide structured reasoning)
+
+3. **VERA's Contribution**: VERA addresses this gap by:
+   - Providing structured ARR reasoning (analyze → reason → respond)
+   - Multi-perspective evaluation (critique-debate-adjudicate)
+   - Independent verification (CoV) with fallacy detection
+   - Traceable reasoning to legal provisions
+
+4. **Paper Updates**: We will:
+   - Add explicit definition of "explainable justifications" in Section I
+   - Cite comparative systems (CaseHOLD, LegalBench) in Section II
+   - Clarify that VERA provides structured reasoning traces, not just answers
+
+**Terminology Revision:**
 
 **How We Handled It:**
 
